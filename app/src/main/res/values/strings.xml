@@ -1,3 +1,9 @@
 <resources>
-    <string name="app_name">AndroidLearn</string>
+    <string name="app_name">Android Learn</string>
+    <string name="result">Result</string>
+    <string name="title_activity_settings">Settings</string>
+    <string name="sign_out">Sign out</string>
+    <string name="quiz">Quiz</string>
+    <string name="next">Next</string>
+
 </resources>
