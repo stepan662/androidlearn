@@ -13,8 +13,9 @@ import java.util.ArrayList;
 public class Question extends BaseObservable implements Serializable{
     private String text;
     private String imageUrl;
-    private ArrayList<Answer> answers;
-    private Answer correctAnswer;
+    private String correctAnswerId;
+    private String fireabseId;
+    private ArrayList<Answer> answerArray = new ArrayList<Answer>();
 
     @Bindable
     public String getText() {
@@ -37,22 +38,38 @@ public class Question extends BaseObservable implements Serializable{
     }
 
     @Bindable
-    public ArrayList<Answer> getAnswers() {
-        return answers;
+    public String getCorrectAnswerId() {
+        return correctAnswerId;
     }
 
-    public void setAnswers(ArrayList<Answer> answers) {
-        this.answers = answers;
-        notifyPropertyChanged(BR.answers);
+    public void setCorrectAnswerId(String correctAnswerId) {
+        this.correctAnswerId = correctAnswerId;
+        notifyPropertyChanged(BR.correctAnswerId);
     }
 
     @Bindable
-    public Answer getCorrectAnswer() {
-        return correctAnswer;
+    public String getFirebaseId() {
+        return this.fireabseId;
     }
 
-    public void setCorrectAnswer(Answer correctAnswer) {
-        this.correctAnswer = correctAnswer;
-        notifyPropertyChanged(BR.correctAnswer);
+    public void setFirebaseId(String id) {
+        this.fireabseId = id;
+        this.notifyPropertyChanged(BR.firebaseId);
     }
+
+    @Bindable
+    public ArrayList<Answer> getAnswerArray() {
+        return answerArray;
+    }
+
+    public void setAnswerArray(ArrayList<Answer> answerArray) {
+        this.answerArray = answerArray;
+        notifyPropertyChanged(BR.answerArray);
+    }
+
+    @Override
+    public String toString() {
+        return LocalStorage.toJson(this);
+    }
+
 }

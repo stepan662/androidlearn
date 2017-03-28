@@ -5,5 +5,14 @@
     <string name="sign_out">Sign out</string>
     <string name="quiz">Quiz</string>
     <string name="next">Next</string>
+    <string name="finish">finish</string>
+    <string name="your_score">Your score</string>
+    <string name="ok">OK</string>
+    <string name="results">Results</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="lt_lt_swipe_left_to_see_correct_answers"><![CDATA[<< Swipe left to see correct answers]]></string>
+    <string name="Stars">★★★☆☆</string>
 
 </resources>

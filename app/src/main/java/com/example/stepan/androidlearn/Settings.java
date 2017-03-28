@@ -10,6 +10,8 @@ import android.util.Log;
 import com.google.gson.*;
 
 import java.io.Serializable;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * Created by stepan on 2/25/17.
@@ -44,4 +46,14 @@ public class Settings extends BaseObservable implements Serializable {
         notifyPropertyChanged(BR.userIdToken);
     }
 
+    public void loadSettings(Context context) {
+        Settings s = (Settings)LocalStorage.loadObject(context, "SETTINGS", Settings.class);
+        if(s != null && !Objects.equals(s.getUserIdToken(), this.getUserIdToken())) {
+            this.setUserIdToken(s.getUserIdToken());
+        }
+    }
+
+    public void storeSettings(Context context) {
+        LocalStorage.storeObject(context, "SETTINGS", this);
+    }
 }

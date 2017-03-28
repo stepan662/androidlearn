@@ -10,7 +10,8 @@ import java.io.Serializable;
  */
 
 public class Answer extends BaseObservable implements Serializable{
-    private String text = null;
+    private String text;
+    private String fireabseId;
 
     public Answer() {
 
@@ -24,5 +25,15 @@ public class Answer extends BaseObservable implements Serializable{
     public void setText(String text) {
         this.text = text;
         notifyPropertyChanged(BR.text);
+    }
+
+    @Bindable
+    public String getFirebaseId() {
+        return this.fireabseId;
+    }
+
+    public void setFirebaseId(String id) {
+        this.fireabseId = id;
+        this.notifyPropertyChanged(BR.firebaseId);
     }
 }

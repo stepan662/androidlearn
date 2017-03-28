@@ -28,11 +28,13 @@ import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 
 public class SettingsActivity extends AppCompatActivity implements GoogleApiClient.OnConnectionFailedListener {
 
-    private static final String TAG = "Google sign in";
+    private static final String TAG = "SETTINGS";
     private static final int RC_SIGN_IN = 9001;
     private String idToken = null;
     private GoogleApiClient mGoogleApiClient = null;
@@ -62,6 +64,10 @@ public class SettingsActivity extends AppCompatActivity implements GoogleApiClie
                 // User is signed in
                 Log.d(TAG, "onAuthStateChanged:signed_in:" + user.getUid());
                 settings.setUserIdToken(user.getUid());
+                DatabaseReference ref = FirebaseDatabase.getInstance().getReference("users").child(settings.getUserIdToken());
+                UserResultsManager manager = new UserResultsManager(getApplicationContext(), null);
+                manager.goOnline();
+                manager.pushOfflineToOnline(ref);
             } else {
                 // User is signed out
                 Log.d(TAG, "onAuthStateChanged:signed_out");
@@ -70,27 +76,25 @@ public class SettingsActivity extends AppCompatActivity implements GoogleApiClie
             }
         };
 
-        this.settings.set((Settings)LocalStorage.fromJson(this.getIntent().getStringExtra("SETTINGS"), Settings.class));
+        this.settings.loadSettings(getApplicationContext());
 
         this.settings.addOnPropertyChangedCallback(new Observable.OnPropertyChangedCallback() {
             @Override
             public void onPropertyChanged(Observable observable, int i) {
-            Intent resultData = SettingsActivity.this.getIntent();
-            resultData.putExtra("SETTINGS", LocalStorage.toJson(SettingsActivity.this.settings));
-            setResult(Activity.RESULT_OK, resultData);
+            settings.storeSettings(getApplicationContext());
             }
         });
+
+
     }
 
     private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
-        Log.d(TAG, "firebaseAuthWithGoogle:" + acct.getId());
 
         AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
         mAuth.signInWithCredential(credential)
             .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
                 @Override
                 public void onComplete(@NonNull Task<AuthResult> task) {
-                Log.d(TAG, "signInWithCredential:onComplete:" + task.isSuccessful());
 
                 // If sign in fails, display a message to the user. If sign in succeeds
                 // the auth state listener will be notified and logic to handle the

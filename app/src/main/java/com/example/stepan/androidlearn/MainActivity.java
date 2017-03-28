@@ -1,6 +1,7 @@
 package com.example.stepan.androidlearn;
 
 import android.content.Intent;
+import android.databinding.Observable;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.ActionBar;
@@ -9,7 +10,11 @@ import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.firebase.ui.storage.images.FirebaseImageLoader;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthCredential;
@@ -17,8 +22,11 @@ import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -61,10 +69,8 @@ public class MainActivity extends AppCompatActivity {
                 FirebaseUser user = firebaseAuth.getCurrentUser();
                 if (user != null) {
                     // User is signed in
-                    Log.d(TAG, "onAuthStateChanged:signed_in:" + user.getUid());
                 } else if (user == null) {
                     // User is signed out
-                    Log.d(TAG, "onAuthStateChanged:signed_out");
                 }
                 // ...
             }
@@ -76,6 +82,26 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        topicsDataListener.setSnapshotObserver(new FirebaseSnapshotChangedInterface() {
+            @Override
+            void snapshotChanged(DataSnapshot dataSnapshot) {
+                for(DataSnapshot question: dataSnapshot.child("questions").getChildren()){
+                    Object imageUrlObj = question.child("imageUrl").getValue();
+                    if(imageUrlObj != null) {
+                        String imageUrl = imageUrlObj.toString();
+                        StorageReference ref = FirebaseStorage.getInstance().getReference().child(imageUrl);
+                        Glide
+                            .with(getApplicationContext())
+                            .using(new FirebaseImageLoader())
+                            .load(ref)
+                            .diskCacheStrategy(DiskCacheStrategy.SOURCE)
+                            .into(new LocalGallery(imageUrl));
+                    }
+                }
+            }
+        });
+
         topicsListView.setAdapter(topicsDataListener.getItemsAdapter());
         topicsListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -87,14 +113,20 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
-    }
 
-    private void onSettingsChange() {
-        if (settings.getUserIdToken() != null) {
-            firebaseAuthWithGoogle(settings.getUserIdToken());
-        } else {
-            firebaseAuth.signOut();
-        }
+        settings.addOnPropertyChangedCallback(new Observable.OnPropertyChangedCallback() {
+            @Override
+            public void onPropertyChanged(Observable observable, int i) {
+                if (settings.getUserIdToken() != null) {
+                    firebaseAuthWithGoogle(settings.getUserIdToken());
+                } else {
+                    firebaseAuth.signOut();
+                }
+            }
+        });
+
+
+        settings.loadSettings(getApplicationContext());
     }
 
     public void goToSettings(View v) {
@@ -108,12 +140,7 @@ public class MainActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == RC_SIGN_IN) {
             if (resultCode == RESULT_OK) {
-                Settings loaded = (Settings)LocalStorage.fromJson(data.getStringExtra("SETTINGS"), Settings.class);
-
-                if (loaded != null) {
-                    this.settings.set(loaded);
-                    LocalStorage.storeObject(this, "SETTINGS", this.settings);
-                }
+                settings.loadSettings(getApplicationContext());
             }
         }
     }

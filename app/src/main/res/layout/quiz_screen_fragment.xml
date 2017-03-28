@@ -1,22 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical" android:layout_width="match_parent"
-    android:layout_height="match_parent">
+<layout xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+    <data>
+        <import type="android.view.View"/>
+        <import type="android.graphics.Color"/>
+        <variable name="question" type="com.example.stepan.androidlearn.Question" />
+        <variable name="questionNumber" type="Integer" />
+        <variable name="questionsCount" type="Integer" />
+        <variable name="answer" type="com.example.stepan.androidlearn.QuestionAnswer" />
+        <variable name="fin" type="Boolean" />
+    </data>
+    <FrameLayout
+        android:orientation="vertical" android:layout_width="match_parent"
+        android:layout_height="match_parent">
 
-    <TextView
-        android:text="TextView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/quiestion_text"
-        android:layout_margin="10dp"
-        android:textColor="@color/common_google_signin_btn_text_dark_focused" />
+        <Button
+            android:text='@{questionNumber == questionsCount - 1 ? "finish" : "next"}'
+            android:visibility="@{fin ? View.GONE : View.VISIBLE}"
+            android:enabled='@{answer.answerId == null ? false: true}'
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_marginEnd="20dp"
+            android:layout_marginBottom="20dp"
+            android:onClick="nextQuestion" />
 
-    <Button
-        android:text="@string/next"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_marginEnd="20dp"
-        android:layout_marginBottom="20dp"
-        android:onClick="nextQuestion" />
-</FrameLayout>
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <ImageView
+                    android:layout_width="200dp"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/imageView"
+                    android:visibility='@{question.imageUrl == null ? View.GONE : View.VISIBLE}'
+                    android:layout_gravity="center_horizontal" />
+
+                <TextView
+                    android:text="@{question.text}"
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:id="@+id/textView"
+                    android:layout_margin="10dp"
+                    android:textSize="18sp"
+                    android:textColor="@color/common_google_signin_btn_text_dark_focused" />
+
+                <RadioGroup
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:id="@+id/answers_group" >
+
+                </RadioGroup>
+            </LinearLayout>
+        </ScrollView>
+
+    </FrameLayout>
+</layout>
