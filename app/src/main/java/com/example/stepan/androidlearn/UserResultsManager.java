@@ -122,7 +122,7 @@ public class UserResultsManager {
         ArrayList<QuizResult> offlineData = getOfflineData();
         for(QuizResult res: getOfflineData()) {
             res.setFirebaseId(null);
-            addItem(res, reference);
+            addItem(res, reference.child(res.getTopicId()));
             offlineData.remove(0);
             setOfflineData(offlineData);
         }

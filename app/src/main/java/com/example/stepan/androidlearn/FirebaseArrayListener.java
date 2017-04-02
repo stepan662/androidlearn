@@ -25,9 +25,10 @@ public class FirebaseArrayListener implements ChildEventListener, CustomChildEve
     private HashMap<String, FirebaseObjectInterface> itemsMap = new HashMap<String, FirebaseObjectInterface>();
     private ArrayList<FirebaseObjectInterface> itemsList;
     private ArrayAdapter<FirebaseObjectInterface> itemsAdapter;
-    private Comparator<FirebaseObjectInterface> comparator;
     private Class itemClass;
+
     private FirebaseSnapshotChangedInterface snapshotObserver;
+    private ArrayList<ArrayChangedListener> customListeners;
 
     FirebaseArrayListener(Class adapterClass, Class itemClass, Context context) throws
             NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
@@ -38,16 +39,19 @@ public class FirebaseArrayListener implements ChildEventListener, CustomChildEve
 
         this.itemClass = itemClass;
 
-        this.setSortFunction(new Comparator<FirebaseObjectInterface>() {
-            @Override
-            public int compare(FirebaseObjectInterface lhs, FirebaseObjectInterface rhs) {
-                return lhs.getFirebaseId().compareTo(rhs.getFirebaseId());
-            }
-        });
+        customListeners = new ArrayList<>();
     }
 
     public void setSnapshotObserver(FirebaseSnapshotChangedInterface snapshotObserver) {
         this.snapshotObserver = snapshotObserver;
+    }
+
+    public void removeCustomEventListener(ArrayChangedListener customChildEventListener) {
+        this.customListeners.remove(customChildEventListener);
+    }
+
+    public void addCustomEventListener(ArrayChangedListener customListener) {
+        this.customListeners.add(customListener);
     }
 
 
@@ -95,17 +99,6 @@ public class FirebaseArrayListener implements ChildEventListener, CustomChildEve
         Log.d(TAG, dataSnapshot.toString());
     }
 
-    public void setSortFunction(Comparator<FirebaseObjectInterface> comparator) {
-        this.comparator = comparator;
-    }
-
-    private void sort() {
-        if(comparator == null)
-            return;
-
-        Collections.sort(itemsList, comparator);
-    }
-
     public void onCancelled(DatabaseError databaseError) {
         Log.d(TAG, databaseError.toString());
     }
@@ -113,12 +106,21 @@ public class FirebaseArrayListener implements ChildEventListener, CustomChildEve
     @Override
     public void onChildAdded(FirebaseObjectInterface newItem) {
         if (itemsMap.containsKey(newItem.getFirebaseId())) {
-            itemsList.remove(itemsMap.get(newItem.getFirebaseId()));
+            int index = itemsList.indexOf(itemsMap.get(newItem.getFirebaseId()));
+            itemsList.set(index, newItem);
+            itemsMap.put(newItem.getFirebaseId(), newItem);
+            itemsAdapter.notifyDataSetChanged();
+            for(ArrayChangedListener item: this.customListeners) {
+                item.arrayChanged(itemsList);
+            }
+        } else {
+            itemsList.add(newItem);
+            itemsMap.put(newItem.getFirebaseId(), newItem);
+            itemsAdapter.notifyDataSetChanged();
+            for(ArrayChangedListener item: this.customListeners) {
+                item.itemAdded(newItem);
+            }
         }
-        itemsList.add(newItem);
-        itemsMap.put(newItem.getFirebaseId(), newItem);
-        sort();
-        itemsAdapter.notifyDataSetChanged();
     }
 
     @Override
@@ -129,8 +131,10 @@ public class FirebaseArrayListener implements ChildEventListener, CustomChildEve
 
         itemsMap.put(item.getFirebaseId(), item);
 
-        sort();
         itemsAdapter.notifyDataSetChanged();
+        for(ArrayChangedListener it: this.customListeners) {
+            it.arrayChanged(itemsList);
+        }
     }
 
     @Override
@@ -140,6 +144,9 @@ public class FirebaseArrayListener implements ChildEventListener, CustomChildEve
         itemsList.remove(oldItem);
         itemsAdapter.remove(oldItem);
         itemsMap.remove(oldItem);
+        for(ArrayChangedListener it: this.customListeners) {
+            it.arrayChanged(itemsList);
+        }
     }
 
     @Override
@@ -149,5 +156,11 @@ public class FirebaseArrayListener implements ChildEventListener, CustomChildEve
 
     @Override
     public void onCancelled(FirebaseObjectInterface var1) {
+    }
+
+    public void clearList() {
+        this.itemsList.clear();
+        this.itemsMap.clear();
+        itemsAdapter.notifyDataSetChanged();
     }
 }

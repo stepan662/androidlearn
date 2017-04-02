@@ -3,6 +3,8 @@ package com.example.stepan.androidlearn;
 import android.content.Intent;
 import android.database.DataSetObserver;
 import android.databinding.DataBindingUtil;
+import android.graphics.Canvas;
+import android.graphics.Color;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -29,10 +31,20 @@ import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
+import com.jjoe64.graphview.GraphView;
+import com.jjoe64.graphview.GridLabelRenderer;
+import com.jjoe64.graphview.Viewport;
+import com.jjoe64.graphview.helper.StaticLabelsFormatter;
+import com.jjoe64.graphview.series.BarGraphSeries;
+import com.jjoe64.graphview.series.DataPoint;
+import com.jjoe64.graphview.series.LineGraphSeries;
+import com.jjoe64.graphview.series.Series;
 
+import java.lang.reflect.Array;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
@@ -54,6 +66,9 @@ public class TopicActivity extends AppCompatActivity {
     private UserResultsManager resultsManager;
 
     private Settings settings;
+
+    private ArrayList<Integer> chartNumbers;
+    private LineGraphSeries<DataPoint> chartSeries;
 
 
     @Override
@@ -97,32 +112,13 @@ public class TopicActivity extends AppCompatActivity {
             }
         };
 
-        Log.d("TopicID", this.topicId);
-
         ListView resultsView = (ListView) binding.getRoot().findViewById(R.id.results);
         try {
             resultsListener = new FirebaseArrayListener(ResultsAdapter.class, QuizResult.class, this.getApplicationContext());
         } catch (Exception e) {
             e.printStackTrace();
         }
-        resultsListener.setSortFunction(new Comparator<FirebaseObjectInterface>() {
-            @Override
-            public int compare(FirebaseObjectInterface lhs, FirebaseObjectInterface rhs) {
-                QuizResult l = (QuizResult)lhs;
-                QuizResult r = (QuizResult)rhs;
-                SimpleDateFormat format = new SimpleDateFormat("MM/dd/yyyy KK:mm:ss a Z", Locale.UK);
-                Date ldate;
-                Date rdate;
-                try {
-                    ldate = format.parse(l.getTime());
-                    rdate = format.parse(r.getTime());
-                } catch (ParseException e) {
-                    e.printStackTrace();
-                    return 0;
-                }
-                return rdate.compareTo(ldate);
-            }
-        });
+
         resultsView.setAdapter(resultsListener.getItemsAdapter());
 
         this.resultsManager = new UserResultsManager(this.getApplicationContext(), resultsListener);
@@ -130,20 +126,87 @@ public class TopicActivity extends AppCompatActivity {
 
         if(settings.getUserIdToken() != null) {
             // use firebase
-            resultsDataRef = firebase.getReference("users").child(settings.getUserIdToken())
-                    .orderByChild("topicId").startAt(this.topicId).endAt(this.topicId);
+            resultsDataRef = firebase.getReference("users").child(settings.getUserIdToken()).child(this.topicId);
             resultsManager.setUserQuery(resultsDataRef);
             resultsManager.goOnline();
         } else {
             // use local storage
             resultsManager.goOffline();
         }
+
+        final GraphView resultsGraph = (GraphView) binding.getRoot().findViewById(R.id.resultGraph);
+
+        resultsGraph.getViewport().setYAxisBoundsManual(true);
+        resultsGraph.getViewport().setMinY(0.0);
+        resultsGraph.getViewport().setMaxY(5.0);
+
+        resultsGraph.getViewport().setXAxisBoundsManual(true);
+        resultsGraph.getViewport().setMinX(0.0);
+        resultsGraph.getViewport().setMaxX(6.0);
+
+        resultsGraph.getGridLabelRenderer().setHorizontalAxisTitle("Time");
+        resultsGraph.getGridLabelRenderer().setHorizontalLabelsVisible(false);
+
+        resultsGraph.getGridLabelRenderer().setHumanRounding(false);
+        resultsGraph.getGridLabelRenderer().setNumVerticalLabels(6);
+        resultsGraph.getGridLabelRenderer().setVerticalLabelsVisible(true);
+        resultsGraph.getGridLabelRenderer().setHorizontalLabelsVisible(false);
+        resultsGraph.getGridLabelRenderer().setVerticalLabelsColor(getColor(R.color.colorYellow));
+
+        StaticLabelsFormatter staticLabelsFormatter = new StaticLabelsFormatter(resultsGraph);
+        staticLabelsFormatter.setVerticalLabels(new String[] {"", "★", "★", "★", "★", "★",});
+        resultsGraph.getGridLabelRenderer().setLabelFormatter(staticLabelsFormatter);
+
+
+        this.chartNumbers = new ArrayList<>();
+        this.chartSeries = new LineGraphSeries<>();
+        resultsGraph.addSeries(this.chartSeries);
+
+        resultsListener.addCustomEventListener(new ArrayChangedListener() {
+            @Override
+            public void arrayChanged(ArrayList<FirebaseObjectInterface> array) {
+                chartNumbers.clear();
+                chartSeries.resetData(new DataPoint[0]);
+                for(int i = 0; i <  array.size(); i++) {
+                    QuizResult result = (QuizResult)array.get(i);
+                    chartSeries.appendData(
+                            new DataPoint(i, (float)result.getCorrectCount()),
+                            true,
+                            array.size()
+                    );
+                    chartNumbers.add(result.getCorrectCount());
+                }
+                adjustPortView();
+            }
+
+            @Override
+            public void itemAdded(FirebaseObjectInterface item) {
+                QuizResult result = (QuizResult) item;
+                chartSeries.appendData(
+                        new DataPoint(chartNumbers.size(), (float)result.getCorrectCount()),
+                        true,
+                        chartNumbers.size() + 1
+                );
+                chartNumbers.add(result.getCorrectCount());
+                adjustPortView();
+            }
+
+            private void adjustPortView() {
+                if(chartNumbers.size() < 7) {
+                    resultsGraph.getViewport().setMinX(0);
+                    resultsGraph.getViewport().setMaxX(6);
+                } else {
+                    resultsGraph.getViewport().setMinX(chartNumbers.size() - 7);
+                    resultsGraph.getViewport().setMaxX(chartNumbers.size() - 1);
+                }
+                resultsGraph.getViewport().setScrollable(true);
+            }
+        });
     }
 
     public void goBack(View v) {
         this.finish();
     }
-
     public void startQuiz(View v) {
         Intent intent = new Intent(this, QuizActivity.class);
         intent.putExtra("QUESTIONS", randomQuestions(this.topicObject.getQuestionArray().size() / 2));

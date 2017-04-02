@@ -10,6 +10,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
@@ -41,7 +42,7 @@ public class QuizActivity extends AppCompatActivity {
 
     private String topicId;
     private ArrayList<Question> questions;
-    private SeekBar seekBar;
+    private ProgressBar progressBar;
     private TextView questionActionBar;
     private ArrayList<QuestionAnswer> answers;
     private Boolean finished;
@@ -63,6 +64,7 @@ public class QuizActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM);
         getSupportActionBar().setDisplayShowCustomEnabled(true);
         getSupportActionBar().setCustomView(R.layout.activity_question_action_bar);
+        getSupportActionBar().setElevation(0);
         final View view = getSupportActionBar().getCustomView();
 
         questionActionBar = (TextView)view.findViewById(R.id.question_name);
@@ -78,15 +80,15 @@ public class QuizActivity extends AppCompatActivity {
 
         questionActionBar.setText("Question 1 of " + String.valueOf(this.questions.size()));
 
-        seekBar = (SeekBar) findViewById(R.id.seekBar);
-        seekBar.setOnTouchListener(new View.OnTouchListener(){
+        progressBar = (ProgressBar) findViewById(R.id.quizProgress);
+        progressBar.setOnTouchListener(new View.OnTouchListener(){
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 return true;
             }
         });
-        seekBar.setMax((this.questions.size()) * 100);
-        seekBar.setProgress(0);
+        progressBar.setMax((this.questions.size()) * 100);
+        progressBar.setProgress(0);
 
         // Instantiate a ViewPager and a PagerAdapter
         mPager = (QuestionPager) findViewById(R.id.quiz_pager);
@@ -102,7 +104,7 @@ public class QuizActivity extends AppCompatActivity {
         mPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
             public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-                seekBar.setProgress((int)Math.round((position + positionOffset) * 100.0));
+                progressBar.setProgress((int)Math.round((position + positionOffset) * 100.0));
             }
 
             @Override
@@ -217,7 +219,7 @@ public class QuizActivity extends AppCompatActivity {
                 getIntent().putExtra("RESULT", result);
                 DatabaseReference ref = null;
                 if(this.settings.getUserIdToken() != null) {
-                    ref = FirebaseDatabase.getInstance().getReference("users").child(settings.getUserIdToken());
+                    ref = FirebaseDatabase.getInstance().getReference("users").child(settings.getUserIdToken()).child(result.getTopicId());
                     userResultsManager.goOnline();
                 }
                 userResultsManager.addItem(result, ref);
@@ -245,7 +247,7 @@ public class QuizActivity extends AppCompatActivity {
 
         result.setQuestionCount(questions.size());
         result.setCorrectCount(questionCorrect);
-        result.setTime((new SimpleDateFormat("MM/dd/yyyy KK:mm:ss a Z", Locale.UK)).format(new Date()));
+        result.setTime((new Date()).getTime());
         result.setTopicId(this.topicId);
 
         return result;

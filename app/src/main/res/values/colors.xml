@@ -4,4 +4,5 @@
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
     <color name="GoogleButton">#536dff</color>
+    <color name="colorYellow">@android:color/holo_orange_light</color>
 </resources>

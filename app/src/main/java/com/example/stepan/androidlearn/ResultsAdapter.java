@@ -28,7 +28,7 @@ public class ResultsAdapter extends ArrayAdapter<QuizResult> {
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         // Get the data item for this position
-        QuizResult result = getItem(position);
+        QuizResult result = getItem(this.getCount() - (position + 1));
         // Check if an existing view is being reused, otherwise inflate the view
         if (convertView == null) {
             convertView = LayoutInflater.from(getContext()).inflate(R.layout.result_item, parent, false);
@@ -46,14 +46,7 @@ public class ResultsAdapter extends ArrayAdapter<QuizResult> {
 
         scoreView.setText(scoreText);
 
-        SimpleDateFormat format = new SimpleDateFormat("MM/dd/yyyy KK:mm:ss a Z", Locale.UK);
-        Date date;
-        try {
-            date = format.parse(result.getTime());
-        } catch (ParseException e) {
-            e.printStackTrace();
-            return convertView;
-        }
+        Date date = new Date(result.getTime());
 
 
         RelativeTimeTextView dateView = (RelativeTimeTextView) convertView.findViewById(R.id.result_date);

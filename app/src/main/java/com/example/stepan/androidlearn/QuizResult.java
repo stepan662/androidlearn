@@ -10,18 +10,18 @@ import java.io.Serializable;
  */
 
 public class QuizResult extends BaseObservable implements Serializable, FirebaseObjectInterface{
-    private String time;
+    private long time;
     private String topicId;
     private int questionCount;
     private int correctCount;
     private String firebaseId;
 
     @Bindable
-    public String getTime() {
+    public long getTime() {
         return time;
     }
 
-    public void setTime(String time) {
+    public void setTime(long time) {
         this.time = time;
         notifyPropertyChanged(BR.time);
     }

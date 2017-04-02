@@ -64,7 +64,8 @@ public class SettingsActivity extends AppCompatActivity implements GoogleApiClie
                 // User is signed in
                 Log.d(TAG, "onAuthStateChanged:signed_in:" + user.getUid());
                 settings.setUserIdToken(user.getUid());
-                DatabaseReference ref = FirebaseDatabase.getInstance().getReference("users").child(settings.getUserIdToken());
+                DatabaseReference ref = FirebaseDatabase.getInstance().getReference("users")
+                        .child(settings.getUserIdToken());
                 UserResultsManager manager = new UserResultsManager(getApplicationContext(), null);
                 manager.goOnline();
                 manager.pushOfflineToOnline(ref);
